@@ -1,5 +1,10 @@
 import 'package:adzan_alarm/assets/constant.dart';
 import 'package:flutter/material.dart';
+import 'package:adhan_dart/adhan_dart.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 
 class home extends StatefulWidget {
   const home({super.key});
@@ -9,6 +14,62 @@ class home extends StatefulWidget {
 }
 
 class _homeState extends State<home> {
+  String shubuh = '';
+  String dzuhur = '';
+  String ashar = '';
+  String maghrib = '';
+  String isya = '';
+
+  double lintang = 0;
+  double bujur = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getShalatTime();
+  }
+
+  void getShalatTime() async {
+    LocationPermission permission;
+    permission = await Geolocator.requestPermission();
+    Position position = await Geolocator.getCurrentPosition();
+    double latitude = position.latitude;
+    double longitude = position.longitude;
+
+    tz.initializeTimeZones();
+    final location = tz.getLocation('Asia/Jakarta');
+
+    DateTime date = tz.TZDateTime.from(DateTime.now(), location);
+    Coordinates coordinates = Coordinates(0, 0);
+
+    CalculationParameters params = CalculationMethod.muslimWorldLeague();
+    params.madhab = Madhab.shafi;
+    PrayerTimes ShalatTimes = PrayerTimes(
+        date: date, coordinates: coordinates, calculationParameters: params);
+
+    setState(() {
+      shubuh = DateFormat('HH:mm')
+          .format(tz.TZDateTime.from(ShalatTimes.fajr!, location))
+          .toString();
+      dzuhur = DateFormat('HH:mm')
+          .format(tz.TZDateTime.from(ShalatTimes.dhuhr!, location))
+          .toString();
+      ashar = DateFormat('HH:mm')
+          .format(tz.TZDateTime.from(ShalatTimes.asr!, location))
+          .toString();
+      maghrib = DateFormat('HH:mm')
+          .format(tz.TZDateTime.from(ShalatTimes.maghrib!, location))
+          .toString();
+      isya = DateFormat('HH:mm')
+          .format(tz.TZDateTime.from(ShalatTimes.isha!, location))
+          .toString();
+
+      lintang = latitude;
+      bujur = longitude;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +118,7 @@ class _homeState extends State<home> {
                 SizedBox(
                   width: 10,
                 ),
-                Text("Posisi",
+                Text(lintang.toString() + ' , ' + bujur.toString(),
                     style: TextStyle(color: Colors.white, fontSize: 15))
               ],
             ),
@@ -68,23 +129,23 @@ class _homeState extends State<home> {
             SizedBox(
               height: 25,
             ),
-            _shalat('Shubuh', '05:00'),
+            _shalat('Shubuh', shubuh),
             SizedBox(
               height: 5,
             ),
-            _shalat('Dzuhur', '12:45'),
+            _shalat('Dzuhur', dzuhur),
             SizedBox(
               height: 5,
             ),
-            _shalat('Ashar', '16:02'),
+            _shalat('Ashar', ashar),
             SizedBox(
               height: 5,
             ),
-            _shalat('Maghrib', '18:41'),
+            _shalat('Maghrib', maghrib),
             SizedBox(
               height: 5,
             ),
-            _shalat('Isya', '20:01'),
+            _shalat('Isya', isya),
           ],
         ),
       ),
